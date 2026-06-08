@@ -18,11 +18,9 @@ jobs:
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
 
-      # --report-events is REQUIRED: it reports run results to Postman Cloud,
-      # which populates the API Catalog "CI Pipeline Runs" + "CI/CD Activity" tabs.
-      - name: Run [Baseline]
-        run: postman collection run "52509354-4f6e3c8d-7a81-4666-806d-aefd69d4d6df" -e "52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2" --report-events
-
+      # --report-events reports run results to Postman Cloud, which populates
+      # the API Catalog "CI Pipeline Runs" + "CI/CD Activity" tabs.
+      # Baseline is the spec reference + mock source (no assertions) — not a CI gate.
       - name: Run [Smoke]
         run: postman collection run "52509354-52bbc1a7-74c7-4c9b-86d9-095e00e96c20" -e "52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2" --report-events
 
