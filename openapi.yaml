@@ -1,0 +1,204 @@
+openapi: 3.0.3
+info:
+  title: FONOA TIN Validation API
+  description: >-
+    Tax Identification Number (TIN) validation for the Netflix Supplier Hub.
+    Asynchronous two-step flow: submit a TIN for validation, then poll for the
+    result. Status codes describe transport (request accepted / poll succeeded),
+    NOT the validation outcome — the outcome lives in the response body
+    (`status` + `found_in_official_database` + `error_details`).
+  version: 2.0.0
+  contact:
+    name: Supplier Hub Platform Team
+servers:
+  - url: https://62db9c70-8909-44a1-8745-d163ef823829.mock.pstmn.io
+    description: Postman mock (demo)
+tags:
+  - name: TIN Validation
+    description: Submit and retrieve supplier tax-ID validations
+paths:
+  /v2/single-validations:
+    post:
+      operationId: submitTinValidation
+      summary: Submit a TIN for validation
+      description: >-
+        Submit a supplier's tax identification number and country. Returns 202
+        with a `validation_id` while the async government-database lookup runs.
+        202 does NOT mean the TIN is valid — poll the status endpoint for the
+        outcome.
+      tags:
+        - TIN Validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TinSubmission'
+            examples:
+              usSupplier:
+                summary: US supplier
+                value:
+                  country_iso_code: US
+                  tax_identification_number: "83-0000001"
+              turkeySupplier:
+                summary: Turkey supplier (province omitted — triggers INCOMPLETE_IMPLEMENTATION)
+                value:
+                  country_iso_code: TR
+                  tax_identification_number: "8150034788"
+      responses:
+        '202':
+          description: Validation accepted and running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionAccepted'
+        '400':
+          description: Invalid request payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v2/single-validations/{validationId}:
+    get:
+      operationId: getTinValidation
+      summary: Get a TIN validation result
+      description: >-
+        Poll for the result of a submitted validation. 200 means the poll
+        succeeded — inspect `status` and, once `completed`, the
+        `found_in_official_database` field and `error_details` for the real
+        outcome. A `completed` job with all-`unknown` fields and
+        `error_details.code = INCOMPLETE_IMPLEMENTATION` is an inconclusive
+        result requiring re-submission with complete data.
+      tags:
+        - TIN Validation
+      parameters:
+        - name: validationId
+          in: path
+          required: true
+          description: The `validation_id` returned by the submission request.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Validation record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationResult'
+        '404':
+          description: Validation ID not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    TinSubmission:
+      type: object
+      required:
+        - country_iso_code
+        - tax_identification_number
+      properties:
+        country_iso_code:
+          type: string
+          description: ISO 3166-1 alpha-2 country code.
+          example: US
+        tax_identification_number:
+          type: string
+          description: The supplier's tax identification number.
+          example: "83-0000001"
+    SubmissionAccepted:
+      type: object
+      required:
+        - status
+        - validation
+      properties:
+        status:
+          type: string
+          enum: [running, completed, canceled]
+          example: running
+        validation:
+          type: object
+          properties:
+            tax_identification_number:
+              type: string
+            country_iso_code:
+              type: string
+            requested_at:
+              type: string
+              format: date-time
+            validation_id:
+              type: string
+              format: uuid
+            format:
+              type: string
+              example: valid
+            is_business:
+              $ref: '#/components/schemas/Tristate'
+        validation_result_url:
+          type: string
+          format: uri
+    ValidationResult:
+      type: object
+      required:
+        - status
+        - validation
+      properties:
+        status:
+          type: string
+          enum: [running, completed, canceled]
+          example: completed
+        validation:
+          type: object
+          properties:
+            found_in_official_database:
+              $ref: '#/components/schemas/Tristate'
+            is_business:
+              $ref: '#/components/schemas/Tristate'
+            tax_registered:
+              $ref: '#/components/schemas/Tristate'
+            business_status:
+              type: string
+              example: active
+            requested_at:
+              type: string
+              format: date-time
+            validation_id:
+              type: string
+              format: uuid
+            country_iso_code:
+              type: string
+            tax_identification_number:
+              type: string
+            format:
+              type: string
+              example: valid
+            error_details:
+              $ref: '#/components/schemas/ErrorDetails'
+    Tristate:
+      type: string
+      description: Tri-state outcome. `unknown` indicates the field could not be resolved.
+      enum: [ "yes", "no", "unknown" ]
+    ErrorDetails:
+      type: object
+      description: >-
+        Empty object when the validation was fully conclusive. Populated with a
+        code when the job ran but could not return a definitive result.
+      properties:
+        code:
+          type: string
+          example: INCOMPLETE_IMPLEMENTATION
+        message:
+          type: string
+          example: Cannot return the result due to insufficient or wrongly formatted data provided.
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
