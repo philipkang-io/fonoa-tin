@@ -1,92 +1,30 @@
-name: CI/CD Pipeline
+name: API Tests (Postman CLI)
+
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
   schedule:
     - cron: "0 */6 * * *"
+
 jobs:
-  test:
+  api-tests:
     runs-on: ubuntu-latest
-    env:
-      POSTMAN_SSL_CLIENT_CERT_B64: ${{ secrets.POSTMAN_SSL_CLIENT_CERT_B64 }}
     steps:
       - uses: actions/checkout@v4
+
       - name: Install Postman CLI
-        run: curl -o- "https://dl-cli.pstmn.io/install/unix.sh" | sh
+        run: curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
-      - name: Resolve Postman Resource IDs
-        run: |
-          ruby <<'RUBY'
-          require 'yaml'
-          config = YAML.load_file('.postman/resources.yaml') || {}
-          cloud = config.fetch('cloudResources', {})
-          collections = cloud.fetch('collections', {})
-          environments = cloud.fetch('environments', {})
-          smoke = collections.find { |path, _| path.include?('[Smoke]') }&.last
-          contract = collections.find { |path, _| path.include?('[Contract]') }&.last
-          environment = environments.find { |path, _| path.end_with?('/prod.postman_environment.json') }&.last || environments.values.first
-          missing = []
-          missing << 'smoke collection' unless smoke
-          missing << 'contract collection' unless contract
-          missing << 'environment' unless environment
-          abort("Missing Postman resource IDs in .postman/resources.yaml: #{missing.join(', ')}") unless missing.empty?
-          File.open(ENV.fetch('GITHUB_ENV'), 'a') do |file|
-            file.puts("POSTMAN_SMOKE_COLLECTION_UID=#{smoke}")
-            file.puts("POSTMAN_CONTRACT_COLLECTION_UID=#{contract}")
-            file.puts("POSTMAN_ENVIRONMENT_UID=#{environment}")
-          end
-          RUBY
-      - name: Decode SSL certificates
-        if: ${{ env.POSTMAN_SSL_CLIENT_CERT_B64 != '' }}
-        env:
-          POSTMAN_SSL_CLIENT_CERT_B64: ${{ secrets.POSTMAN_SSL_CLIENT_CERT_B64 }}
-          POSTMAN_SSL_CLIENT_KEY_B64: ${{ secrets.POSTMAN_SSL_CLIENT_KEY_B64 }}
-          POSTMAN_SSL_EXTRA_CA_CERTS_B64: ${{ secrets.POSTMAN_SSL_EXTRA_CA_CERTS_B64 }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/postman-ssl"
-          printf %s "$POSTMAN_SSL_CLIENT_CERT_B64" | base64 -d > "$RUNNER_TEMP/postman-ssl/client.crt"
-          printf %s "$POSTMAN_SSL_CLIENT_KEY_B64" | base64 -d > "$RUNNER_TEMP/postman-ssl/client.key"
-          if [ -n "$POSTMAN_SSL_EXTRA_CA_CERTS_B64" ]; then
-            printf %s "$POSTMAN_SSL_EXTRA_CA_CERTS_B64" | base64 -d > "$RUNNER_TEMP/postman-ssl/ca.crt"
-          fi
-      - name: Run Smoke Tests
-        env:
-          POSTMAN_SSL_CLIENT_PASSPHRASE: ${{ secrets.POSTMAN_SSL_CLIENT_PASSPHRASE }}
-        run: |
-          CMD=(postman collection run "$POSTMAN_SMOKE_COLLECTION_UID"
-            -e "$POSTMAN_ENVIRONMENT_UID"
-            --report-events
-            --env-var "${{ vars.CI_ENVIRONMENT || 'Production' }}")
-          if [ -f "$RUNNER_TEMP/postman-ssl/client.crt" ]; then
-            CMD+=(--ssl-client-cert "$RUNNER_TEMP/postman-ssl/client.crt"
-              --ssl-client-key "$RUNNER_TEMP/postman-ssl/client.key")
-            if [ -n "$POSTMAN_SSL_CLIENT_PASSPHRASE" ]; then
-              CMD+=(--ssl-client-passphrase "$POSTMAN_SSL_CLIENT_PASSPHRASE")
-            fi
-            if [ -f "$RUNNER_TEMP/postman-ssl/ca.crt" ]; then
-              CMD+=(--ssl-extra-ca-certs "$RUNNER_TEMP/postman-ssl/ca.crt")
-            fi
-          fi
-          "${CMD[@]}"
-      - name: Run Contract Tests
-        env:
-          POSTMAN_SSL_CLIENT_PASSPHRASE: ${{ secrets.POSTMAN_SSL_CLIENT_PASSPHRASE }}
-        run: |
-          CMD=(postman collection run "$POSTMAN_CONTRACT_COLLECTION_UID"
-            -e "$POSTMAN_ENVIRONMENT_UID"
-            --report-events
-            --env-var "${{ vars.CI_ENVIRONMENT || 'Production' }}")
-          if [ -f "$RUNNER_TEMP/postman-ssl/client.crt" ]; then
-            CMD+=(--ssl-client-cert "$RUNNER_TEMP/postman-ssl/client.crt"
-              --ssl-client-key "$RUNNER_TEMP/postman-ssl/client.key")
-            if [ -n "$POSTMAN_SSL_CLIENT_PASSPHRASE" ]; then
-              CMD+=(--ssl-client-passphrase "$POSTMAN_SSL_CLIENT_PASSPHRASE")
-            fi
-            if [ -f "$RUNNER_TEMP/postman-ssl/ca.crt" ]; then
-              CMD+=(--ssl-extra-ca-certs "$RUNNER_TEMP/postman-ssl/ca.crt")
-            fi
-          fi
-          "${CMD[@]}"
+
+      # --report-events is REQUIRED: it reports run results to Postman Cloud,
+      # which populates the API Catalog "CI Pipeline Runs" + "CI/CD Activity" tabs.
+      - name: Run [Baseline]
+        run: postman collection run "52509354-4f6e3c8d-7a81-4666-806d-aefd69d4d6df" -e "52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2" --report-events
+
+      - name: Run [Smoke]
+        run: postman collection run "52509354-52bbc1a7-74c7-4c9b-86d9-095e00e96c20" -e "52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2" --report-events
+
+      - name: Run [Contract]
+        run: postman collection run "52509354-845bb305-c178-40dc-9cac-17afa9800908" -e "52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2" --report-events
