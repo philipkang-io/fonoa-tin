@@ -1,0 +1,53 @@
+type: http
+name: Submit a TIN for validation
+url: '{{baseUrl}}/v2/single-validations'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "country_iso_code": "US",
+      "tax_identification_number": "83-0000001"
+    }
+examples:
+  - response:
+      statusCode: 202
+      statusText: Accepted
+      body:
+        type: json
+        content: |-
+          {
+            "status": "running",
+            "validation": {
+              "tax_identification_number": "string",
+              "country_iso_code": "string",
+              "requested_at": "1986-09-22T05:26:40.565Z",
+              "validation_id": "e0906285-472d-eace-a372-d3c891f25cf5",
+              "format": "valid",
+              "is_business": "no"
+            },
+            "validation_result_url": "https://BGrtwCnMaeexyOS.tssxgwn.Nxf4Jon55"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation accepted and running.
+  - response:
+      statusCode: 400
+      statusText: Bad Request
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Invalid request payload.

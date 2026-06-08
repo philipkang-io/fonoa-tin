@@ -1,0 +1,8 @@
+workflows:
+  syncSpecToCollection:
+    - spec: ../openapi.yaml
+      collection: ../postman/collections/[Baseline] fonoa-tin
+    - spec: ../openapi.yaml
+      collection: ../postman/collections/[Smoke] fonoa-tin
+    - spec: ../openapi.yaml
+      collection: ../postman/collections/[Contract] fonoa-tin

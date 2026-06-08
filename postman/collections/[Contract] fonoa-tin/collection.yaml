@@ -1,0 +1,16 @@
+$schema: https://schema.postman.com/json/draft-2020-12/collection/v3.0.0/
+type: collection
+name: '[Contract] fonoa-tin'
+description: |-
+  Tax Identification Number (TIN) validation for the Netflix Supplier Hub. Asynchronous two-step flow: submit a TIN for validation, then poll for the result. Status codes describe transport (request accepted / poll succeeded), NOT the validation outcome — the outcome lives in the response body (`status` + `found_in_official_database` + `error_details`).
+
+  Contact Support:
+   Name: Supplier Hub Platform Team
+id: 845bb305-c178-40dc-9cac-17afa9800908
+variables:
+  - key: baseUrl
+    value: https://62db9c70-8909-44a1-8745-d163ef823829.mock.pstmn.io
+    type: any
+items:
+  - ref: ./v2/folder.yaml
+  - ref: ./00 - Resolve Secrets.request.yaml

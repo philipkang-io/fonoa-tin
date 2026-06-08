@@ -1,0 +1,71 @@
+type: http
+name: Submit a TIN for validation
+url: '{{baseUrl}}/v2/single-validations'
+method: POST
+headers:
+  - key: Content-Type
+    value: application/json
+  - key: Accept
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "country_iso_code": "US",
+      "tax_identification_number": "83-0000001"
+    }
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 202
+      statusText: Accepted
+      body:
+        type: json
+        content: |-
+          {
+            "status": "running",
+            "validation": {
+              "tax_identification_number": "string",
+              "country_iso_code": "string",
+              "requested_at": "1957-06-19T16:59:21.640Z",
+              "validation_id": "5f92b2f6-d895-59ce-f26e-c36809b41137",
+              "format": "valid",
+              "is_business": "unknown"
+            },
+            "validation_result_url": "https://J.hvpV+-lDl8,J+iXJ1RUQocddN-DkTmV+E0pCgLR0SK5mwJvImoqee.gH2WERdCm-rbvi"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation accepted and running.
+  - response:
+      statusCode: 400
+      statusText: Bad Request
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Invalid request payload.

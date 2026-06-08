@@ -1,0 +1,4 @@
+type: folder
+name: '{validationId}'
+items:
+  - ref: ./Get a TIN validation result.request.yaml

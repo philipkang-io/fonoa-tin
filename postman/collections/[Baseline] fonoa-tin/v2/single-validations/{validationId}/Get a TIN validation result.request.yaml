@@ -1,0 +1,54 @@
+type: http
+name: Get a TIN validation result
+url: '{{baseUrl}}/v2/single-validations/:validationId'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: validationId
+    value: 5195aae1-3883-777c-497c-a998f6bc8a75
+    description: The `validation_id` returned by the submission request.
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "status": "completed",
+            "validation": {
+              "found_in_official_database": "yes",
+              "is_business": "yes",
+              "tax_registered": "unknown",
+              "business_status": "active",
+              "requested_at": "1976-08-18T00:00:31.880Z",
+              "validation_id": "cc9c17f7-a01b-4722-4fe2-6777ba318ff0",
+              "country_iso_code": "string",
+              "tax_identification_number": "string",
+              "format": "valid",
+              "error_details": {
+                "code": "INCOMPLETE_IMPLEMENTATION",
+                "message": "Cannot return the result due to insufficient or wrongly formatted data provided."
+              }
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation record.
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation ID not found.

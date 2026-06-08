@@ -1,0 +1,72 @@
+type: http
+name: Get a TIN validation result
+url: '{{baseUrl}}/v2/single-validations/:validationId'
+method: GET
+headers:
+  - key: Accept
+    value: application/json
+pathVariables:
+  - key: validationId
+    value: 875a343b-9d10-5931-de8e-2d35620b109b
+    description: The `validation_id` returned by the submission request.
+scripts:
+  - type: afterResponse
+    code:
+      - // [Smoke] Auto-generated test assertions
+      - pm.test('Status code is successful (2xx)', function () {
+      - '    pm.response.to.be.success;'
+      - '});'
+      - pm.test('Response time is acceptable', function () {
+      - '    var threshold = parseInt(pm.environment.get(''RESPONSE_TIME_THRESHOLD'') || ''2000'', 10);'
+      - '    pm.expect(pm.response.responseTime).to.be.below(threshold);'
+      - '});'
+      - pm.test('Response body is not empty', function () {
+      - '    if (pm.response.code !== 204) {'
+      - '        var body = pm.response.text();'
+      - '        pm.expect(body.length).to.be.above(0);'
+      - '    }'
+      - '});'
+    language: text/javascript
+examples:
+  - response:
+      statusCode: 200
+      statusText: OK
+      body:
+        type: json
+        content: |-
+          {
+            "status": "completed",
+            "validation": {
+              "found_in_official_database": "yes",
+              "is_business": "no",
+              "tax_registered": "unknown",
+              "business_status": "active",
+              "requested_at": "1951-11-07T09:26:35.243Z",
+              "validation_id": "12e76bc9-383c-fa4e-d58a-8089e4f1dcc6",
+              "country_iso_code": "string",
+              "tax_identification_number": "string",
+              "format": "valid",
+              "error_details": {
+                "code": "INCOMPLETE_IMPLEMENTATION",
+                "message": "Cannot return the result due to insufficient or wrongly formatted data provided."
+              }
+            }
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation record.
+  - response:
+      statusCode: 404
+      statusText: Not Found
+      body:
+        type: json
+        content: |-
+          {
+            "code": "string",
+            "message": "string"
+          }
+      headers:
+        - key: Content-Type
+          value: application/json
+    name: Validation ID not found.

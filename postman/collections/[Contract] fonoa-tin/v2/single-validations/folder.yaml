@@ -1,0 +1,5 @@
+type: folder
+name: single-validations
+items:
+  - ref: ./{validationId}/folder.yaml
+  - ref: ./Submit a TIN for validation.request.yaml

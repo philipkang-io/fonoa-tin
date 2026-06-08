@@ -1,0 +1,4 @@
+type: folder
+name: v2
+items:
+  - ref: ./single-validations/folder.yaml

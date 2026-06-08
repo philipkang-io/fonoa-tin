@@ -1,0 +1,18 @@
+workspace:
+  id: b1bacc4e-69e6-4d6d-8ce1-8441bc7d4783
+localResources:
+  collections:
+    - ../postman/collections/[Baseline] fonoa-tin
+    - ../postman/collections/[Smoke] fonoa-tin
+    - ../postman/collections/[Contract] fonoa-tin
+  environments:
+    - ../postman/environments/prod.postman_environment.json
+  specs:
+    - ../openapi.yaml
+cloudResources:
+  collections:
+    ../postman/collections/[Baseline] fonoa-tin: 52509354-4f6e3c8d-7a81-4666-806d-aefd69d4d6df
+    ../postman/collections/[Smoke] fonoa-tin: 52509354-52bbc1a7-74c7-4c9b-86d9-095e00e96c20
+    ../postman/collections/[Contract] fonoa-tin: 52509354-845bb305-c178-40dc-9cac-17afa9800908
+  environments:
+    ../postman/environments/prod.postman_environment.json: 52509354-4697357f-4e35-4d1c-9843-11e1c3ed90e2
