@@ -1,6 +1,7 @@
 name: API Tests (Postman CLI)
 
 on:
+  workflow_dispatch: 
   push:
     branches: [main]
   schedule:
